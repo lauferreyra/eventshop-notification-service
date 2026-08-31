@@ -13,17 +13,21 @@ async function bootstrap() {
       {
         transport: Transport.RMQ,
         options: {
-          urls: ['amqp://admin:admin@localhost:5672'],
+          urls: [
+            'amqp://admin:admin@localhost:5672',
+          ],
 
           queue: 'notification_queue',
 
           queueOptions: {
             durable: true,
+            arguments: {
+              'x-dead-letter-exchange':
+                'notification.dlx',
+              'x-dead-letter-routing-key':
+                'notification.failed',
+            },
           },
-
-          exchange: 'eventshop.events',
-          exchangeType: 'topic',
-          wildcards: true,
 
           noAck: false,
         },

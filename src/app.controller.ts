@@ -24,9 +24,11 @@ export class AppController {
 
       console.log('📧 Simulando envío de notificación...');
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 10000),
-      );
+      //await new Promise((resolve) =>
+      //  setTimeout(resolve, 10000),
+      //);
+
+      //throw new Error('Error simulado');
 
       channel.ack(message);
 
