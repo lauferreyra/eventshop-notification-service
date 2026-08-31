@@ -91,7 +91,7 @@ export class AppController {
     }
   }} */
 
-    import { Controller } from '@nestjs/common';
+   import { Controller } from '@nestjs/common';
 import {
   Ctx,
   EventPattern,
@@ -99,20 +99,28 @@ import {
   RmqContext,
 } from '@nestjs/microservices';
 
+import { EventEnvelope } from './events/event-envelope.js';
+
 type PaymentCompletedEvent = {
   orderId: string;
 };
+
+type PaymentCompletedEnvelope =
+  EventEnvelope<PaymentCompletedEvent>;
 
 type PaymentFailedEvent = {
   orderId: string;
   reason: string;
 };
 
+type PaymentFailedEnvelope =
+  EventEnvelope<PaymentFailedEvent>;
+
 @Controller()
 export class AppController {
   @EventPattern('payment.completed')
   handlePaymentCompleted(
-    @Payload() data: PaymentCompletedEvent,
+    @Payload() event: PaymentCompletedEnvelope,
     @Ctx() context: any,
   ) {
     const rmqContext = context as RmqContext;
@@ -128,10 +136,20 @@ export class AppController {
         '📩 Notification recibió payment.completed',
       );
 
-      console.log(data);
+      console.log(event);
+
+      console.log(
+        '🆔 Event ID:',
+        event.eventId,
+      );
 
       console.log(
         '📧 Enviando notificación: Pago aprobado',
+      );
+
+      console.log(
+        '📦 Order ID:',
+        event.data.orderId,
       );
 
       channel.ack(message);
@@ -151,7 +169,7 @@ export class AppController {
 
   @EventPattern('payment.failed')
   handlePaymentFailed(
-    @Payload() data: PaymentFailedEvent,
+    @Payload() event: PaymentFailedEnvelope,
     @Ctx() context: any,
   ) {
     const rmqContext = context as RmqContext;
@@ -167,10 +185,25 @@ export class AppController {
         '📩 Notification recibió payment.failed',
       );
 
-      console.log(data);
+      console.log(event);
+
+      console.log(
+        '🆔 Event ID:',
+        event.eventId,
+      );
 
       console.log(
         '📧 Enviando notificación: Pago rechazado',
+      );
+
+      console.log(
+        '📦 Order ID:',
+        event.data.orderId,
+      );
+
+      console.log(
+        '❌ Razón:',
+        event.data.reason,
       );
 
       channel.ack(message);
