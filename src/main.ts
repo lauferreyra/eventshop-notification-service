@@ -14,10 +14,18 @@ async function bootstrap() {
         transport: Transport.RMQ,
         options: {
           urls: ['amqp://admin:admin@localhost:5672'],
+
           queue: 'notification_queue',
+
           queueOptions: {
             durable: true,
           },
+
+          wildcards: true,
+
+          exchange: 'eventshop.events',
+
+          exchangeType: 'topic',
         },
       },
     );
