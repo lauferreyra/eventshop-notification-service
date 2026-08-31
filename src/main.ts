@@ -25,7 +25,7 @@ async function bootstrap() {
           exchangeType: 'topic',
           wildcards: true,
 
-          noAck: true,
+          noAck: false,
         },
       },
     );
