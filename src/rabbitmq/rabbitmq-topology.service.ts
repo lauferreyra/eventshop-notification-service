@@ -29,61 +29,101 @@ export class RabbitmqTopologyService
   }
 
   private async createTopology() {
-    const eventsExchange = 'eventshop.events';
+  const eventsExchange = 'eventshop.events';
 
-    const notificationQueue = 'notification_queue';
+  const notificationQueue = 'notification_queue';
 
-    const deadLetterExchange = 'notification.dlx';
+  const retryExchange = 'notification.retry.exchange';
+  const retryQueue = 'notification_retry_queue';
+  const retryRoutingKey = 'notification.retry';
 
-    const deadLetterQueue = 'notification_dlq';
+  const deadLetterExchange = 'notification.dlx';
+  const deadLetterQueue = 'notification_dlq';
 
-    await this.channel.assertExchange(
-      eventsExchange,
-      'topic',
-      {
-        durable: true,
+  // Exchange principal de eventos
+  await this.channel.assertExchange(
+    eventsExchange,
+    'topic',
+    {
+      durable: true,
+    },
+  );
+
+  // Exchange de retry
+  await this.channel.assertExchange(
+    retryExchange,
+    'direct',
+    {
+      durable: true,
+    },
+  );
+
+  // Exchange de mensajes muertos
+  await this.channel.assertExchange(
+    deadLetterExchange,
+    'direct',
+    {
+      durable: true,
+    },
+  );
+
+  // Queue principal
+  await this.channel.assertQueue(
+    notificationQueue,
+    {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': retryExchange,
+        'x-dead-letter-routing-key': retryRoutingKey,
       },
-    );
+    },
+  );
 
-    await this.channel.assertExchange(
-      deadLetterExchange,
-      'direct',
-      {
-        durable: true,
+  // Queue de retry
+  await this.channel.assertQueue(
+    retryQueue,
+    {
+      durable: true,
+      arguments: {
+        'x-message-ttl': 10000,
+
+        'x-dead-letter-exchange': eventsExchange,
+
+        'x-dead-letter-routing-key':
+          'order.created',
       },
-    );
+    },
+  );
 
-    await this.channel.assertQueue(
-      notificationQueue,
-      {
-        durable: true,
-        arguments: {
-          'x-dead-letter-exchange': deadLetterExchange,
-          'x-dead-letter-routing-key':
-            'notification.failed',
-        },
-      },
-    );
+  // DLQ
+  await this.channel.assertQueue(
+    deadLetterQueue,
+    {
+      durable: true,
+    },
+  );
 
-    await this.channel.assertQueue(
-      deadLetterQueue,
-      {
-        durable: true,
-      },
-    );
+  // order.created → notification_queue
+  await this.channel.bindQueue(
+    notificationQueue,
+    eventsExchange,
+    'order.created',
+  );
 
-    await this.channel.bindQueue(
-      notificationQueue,
-      eventsExchange,
-      'order.created',
-    );
+  // mensajes fallidos → retry queue
+  await this.channel.bindQueue(
+    retryQueue,
+    retryExchange,
+    retryRoutingKey,
+  );
 
-    await this.channel.bindQueue(
-      deadLetterQueue,
-      deadLetterExchange,
-      'notification.failed',
-    );
-  }
+  // mensajes definitivamente fallidos → DLQ
+  await this.channel.bindQueue(
+    deadLetterQueue,
+    deadLetterExchange,
+    'notification.failed',
+  );
+}
 
   async onModuleDestroy() {
     await this.channel?.close();

@@ -12,25 +12,24 @@ async function bootstrap() {
       AppModule,
       {
         transport: Transport.RMQ,
-        options: {
-          urls: [
-            'amqp://admin:admin@localhost:5672',
-          ],
+       options: {
+        urls: ['amqp://admin:admin@localhost:5672'],
 
-          queue: 'notification_queue',
+        queue: 'notification_queue',
 
-          queueOptions: {
-            durable: true,
-            arguments: {
-              'x-dead-letter-exchange':
-                'notification.dlx',
-              'x-dead-letter-routing-key':
-                'notification.failed',
-            },
+        queueOptions: {
+          durable: true,
+          arguments: {
+            'x-dead-letter-exchange':
+              'notification.retry.exchange',
+
+            'x-dead-letter-routing-key':
+              'notification.retry',
           },
-
-          noAck: false,
         },
+
+        noAck: false,
+      },
       },
     );
 
