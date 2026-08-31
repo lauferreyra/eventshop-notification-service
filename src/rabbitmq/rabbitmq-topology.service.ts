@@ -105,11 +105,16 @@ export class RabbitmqTopologyService
       },
     );
 
-    // order.created -> notification_queue
+      await this.channel.bindQueue(
+      notificationQueue,
+      eventsExchange,
+      'payment.completed',
+    );
+
     await this.channel.bindQueue(
       notificationQueue,
       eventsExchange,
-      'order.created',
+      'payment.failed',
     );
 
     // errores temporales -> notification_retry_queue

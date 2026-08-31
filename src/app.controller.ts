@@ -1,4 +1,4 @@
-import { Controller } from '@nestjs/common';
+/* import { Controller } from '@nestjs/common';
 import {
   Ctx,
   EventPattern,
@@ -89,4 +89,102 @@ export class AppController {
         false,
       );
     }
-  }}
+  }} */
+
+    import { Controller } from '@nestjs/common';
+import {
+  Ctx,
+  EventPattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
+
+type PaymentCompletedEvent = {
+  orderId: string;
+};
+
+type PaymentFailedEvent = {
+  orderId: string;
+  reason: string;
+};
+
+@Controller()
+export class AppController {
+  @EventPattern('payment.completed')
+  handlePaymentCompleted(
+    @Payload() data: PaymentCompletedEvent,
+    @Ctx() context: any,
+  ) {
+    const rmqContext = context as RmqContext;
+
+    const channel =
+      rmqContext.getChannelRef();
+
+    const message =
+      rmqContext.getMessage();
+
+    try {
+      console.log(
+        '📩 Notification recibió payment.completed',
+      );
+
+      console.log(data);
+
+      console.log(
+        '📧 Enviando notificación: Pago aprobado',
+      );
+
+      channel.ack(message);
+    } catch (error) {
+      console.error(
+        '❌ Error procesando payment.completed',
+        error,
+      );
+
+      channel.nack(
+        message,
+        false,
+        false,
+      );
+    }
+  }
+
+  @EventPattern('payment.failed')
+  handlePaymentFailed(
+    @Payload() data: PaymentFailedEvent,
+    @Ctx() context: any,
+  ) {
+    const rmqContext = context as RmqContext;
+
+    const channel =
+      rmqContext.getChannelRef();
+
+    const message =
+      rmqContext.getMessage();
+
+    try {
+      console.log(
+        '📩 Notification recibió payment.failed',
+      );
+
+      console.log(data);
+
+      console.log(
+        '📧 Enviando notificación: Pago rechazado',
+      );
+
+      channel.ack(message);
+    } catch (error) {
+      console.error(
+        '❌ Error procesando payment.failed',
+        error,
+      );
+
+      channel.nack(
+        message,
+        false,
+        false,
+      );
+    }
+  }
+}
