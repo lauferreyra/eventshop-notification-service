@@ -34,8 +34,18 @@ export class RabbitmqTopologyService
   const notificationQueue = 'notification_queue';
 
   const retryExchange = 'notification.retry.exchange';
-  const retryQueue = 'notification_retry_queue';
-  const retryRoutingKey = 'notification.retry';
+
+  const retryReturnExchange =
+    'notification.retry.return.exchange';
+
+  const retryQueue =
+    'notification_retry_queue';
+
+  const retryRoutingKey =
+    'notification.retry';
+
+  const retryReturnRoutingKey =
+    'notification.retry.return';
 
   const deadLetterExchange = 'notification.dlx';
   const deadLetterQueue = 'notification_dlq';
@@ -67,6 +77,22 @@ export class RabbitmqTopologyService
     },
   );
 
+  await this.channel.assertExchange(
+  retryExchange,
+  'direct',
+  {
+    durable: true,
+  },
+);
+
+await this.channel.assertExchange(
+  retryReturnExchange,
+  'direct',
+  {
+    durable: true,
+  },
+);
+
   // Queue principal
   await this.channel.assertQueue(
     notificationQueue,
@@ -87,10 +113,11 @@ export class RabbitmqTopologyService
       arguments: {
         'x-message-ttl': 10000,
 
-        'x-dead-letter-exchange': eventsExchange,
+        'x-dead-letter-exchange':
+          retryReturnExchange,
 
         'x-dead-letter-routing-key':
-          'order.created',
+          retryReturnRoutingKey,
       },
     },
   );
@@ -102,6 +129,20 @@ export class RabbitmqTopologyService
       durable: true,
     },
   );
+
+  await this.channel.assertQueue(
+  notificationQueue,
+  {
+    durable: true,
+    arguments: {
+      'x-dead-letter-exchange':
+        retryExchange,
+
+      'x-dead-letter-routing-key':
+        retryRoutingKey,
+    },
+  },
+);
 
   // order.created → notification_queue
   await this.channel.bindQueue(
