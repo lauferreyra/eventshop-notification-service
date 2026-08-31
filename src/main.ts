@@ -21,11 +21,11 @@ async function bootstrap() {
             durable: true,
           },
 
+          exchange: 'eventshop.events',
+          exchangeType: 'topic',
           wildcards: true,
 
-          exchange: 'eventshop.events',
-
-          exchangeType: 'topic',
+          noAck: true,
         },
       },
     );
