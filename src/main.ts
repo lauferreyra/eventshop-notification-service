@@ -13,7 +13,10 @@ async function bootstrap() {
       {
         transport: Transport.RMQ,
        options: {
-        urls: ['amqp://admin:admin@localhost:5672'],
+         urls: [
+            process.env.RABBITMQ_URL ??
+              'amqp://admin:admin@localhost:5672',
+          ],
 
         queue: 'notification_queue',
 
